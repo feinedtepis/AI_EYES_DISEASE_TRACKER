@@ -1,4 +1,4 @@
-# EyeVision AI
+# EyeVision 
 
 A research-oriented eye disease and vision-tracking project that combines retinal image analysis, patient-level disease prediction, and spherical equivalent (SE) estimation from fundus photographs.
 
