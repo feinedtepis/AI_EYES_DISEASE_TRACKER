@@ -1,0 +1,214 @@
+=====================================================================
+ EyeVision AI - HOW TO RUN
+ Research / educational prototype. NOT a medical device.
+=====================================================================
+
+Everything is already done for you:
+  * the disease model is trained on ODIR-5K and evaluated   -> models/, reports/
+  * the project report is written                           -> EyeVision_AI_Project_Report.pdf
+  * the web app is ready, with two DEMO patients loaded     -> run_app.py
+
+You only need the steps below if you want to SEE / DEMO the app.
+Nothing here trains a model, so it is fine on an i3 laptop with 8 GB RAM
+(the app uses about 1 GB of RAM).
+
+
+---------------------------------------------------------------------
+ 0. WHAT IS IN THIS FOLDER
+---------------------------------------------------------------------
+  EyeVision_AI_Project_Report.pdf   the final report (sent next to this zip)
+  HOW_TO_RUN.txt                    this file
+  README.md                         short technical overview
+  run_app.py                        starts the web app
+  train.py evaluate.py predict.py   command-line pipeline
+  dataset.py models.py preprocess.py config.py ...   source code
+  app/                              web app (FastAPI + HTML/JS) and its uploads
+  eyevision.db                      SQLite database (2 demo patients + 1 real ODIR test patient)
+  models/                           trained disease model (EfficientNet-B0, used by the app) + metadata (.json)
+                                    (the ResNet-50 weights are left out to keep the zip small;
+                                     its results are in reports/disease_resnet50/)
+  models/demo/                      synthetic-data demo models (NOT medical)
+  reports/                          evaluation PDFs, plots, metric tables, screenshots
+  sample_images/                    a few real ODIR-5K test images to try in the app
+  notebooks/kaggle_gpu_training.ipynb   optional retraining on a free GPU
+  Dockerfile, deploy/huggingface/   optional: put the app online
+
+
+---------------------------------------------------------------------
+ 1. JUST READ THE RESULTS (no installation)
+---------------------------------------------------------------------
+  Open  EyeVision_AI_Project_Report.pdf
+  Detailed evaluation of each model:
+        reports/disease_efficientnet_b0/evaluation_report.pdf
+        reports/disease_resnet50/evaluation_report.pdf
+
+
+---------------------------------------------------------------------
+ 2. RUN THE WEB APP ON YOUR LAPTOP  (Windows, ~10 minutes the first time)
+---------------------------------------------------------------------
+  Step 1. Install Python 3.11 or 3.12 from https://www.python.org/downloads/
+          During setup TICK "Add python.exe to PATH".
+
+  Step 2. Unzip EyeVisionAI.zip, e.g. to  C:\EyeVisionAI
+          Open the folder in File Explorer, click the address bar,
+          type  cmd  and press Enter. A terminal opens in that folder.
+
+  Step 3. Create a virtual environment and install (one time only):
+
+          python -m venv .venv
+          .venv\Scripts\activate
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+          (The first line of "pip install torch" downloads ~200 MB, CPU-only.)
+
+  Step 4. Start the app:
+
+          python run_app.py
+
+          Wait for "Application startup complete", then open
+          http://127.0.0.1:8000  in your browser.
+
+  Step 5. Try it:
+          - Dashboard  : shows the demo patients DEMO-001 and DEMO-002
+          - Trends     : pick DEMO-001 to see the estimated SE change over 4 visits
+          - New examination : upload images from sample_images/
+            (e.g. a right and a left eye), give any patient ID, press "Analyse images"
+          - Model information : metrics, plots and the evaluation PDF
+
+  Stop the app with  Ctrl + C  in the terminal.
+  Next time you only need:   .venv\Scripts\activate   then   python run_app.py
+
+  macOS / Linux: same steps, but activate with   source .venv/bin/activate
+  and use   pip install torch torchvision   (default wheels).
+
+
+---------------------------------------------------------------------
+ 3. RUN THE APP ONLINE INSTEAD (no install on your PC) - optional
+---------------------------------------------------------------------
+  Uses a free Hugging Face "Space" (cloud CPU, 16 GB RAM).
+  1. Create a free account at https://huggingface.co
+  2. New -> Space -> name it (e.g. eyevision-ai) -> SDK: Docker -> Blank -> Create.
+  3. In the Space: Files -> "Add file" -> "Upload files".
+     Drag in ALL files and folders from the EyeVisionAI folder EXCEPT .venv,
+     then ALSO upload  deploy/huggingface/README.md  to the top level so it
+     replaces README.md (it tells Hugging Face to use the Dockerfile, port 7860).
+     Commit.
+  4. Wait 5-10 minutes for the build. The app opens at
+     https://huggingface.co/spaces/<your-name>/eyevision-ai
+  Note: on the free tier the database resets when the Space restarts.
+
+
+---------------------------------------------------------------------
+ 4. COMMAND-LINE PREDICTION (optional)
+---------------------------------------------------------------------
+  (with the virtual environment activated)
+
+  python predict.py --image sample_images/odir_test_cataract.jpg
+  python predict.py --image sample_images/odir_test_cataract.jpg --gradcam cam.png
+  python predict.py --image <your image> --json
+
+  Every output ends with the research/educational disclaimer.
+
+
+---------------------------------------------------------------------
+ 5. RETRAIN ON A FREE GPU (optional - do NOT train on the i3 laptop)
+---------------------------------------------------------------------
+  The shipped model was trained on a CPU at 224 px. To get a stronger
+  model at 384 px use Kaggle (free GPU, ODIR-5K already hosted there):
+  1. kaggle.com -> Create -> New Notebook -> File -> Import Notebook
+     -> upload notebooks/kaggle_gpu_training.ipynb
+  2. Add Input -> search "Ocular Disease Recognition" (andrewmvd) -> Add
+  3. Add Input -> Upload -> upload EyeVisionAI.zip as dataset "eyevisionai-code"
+  4. Settings: Accelerator = GPU T4 x2, Internet = On   (needs a phone-verified account)
+  5. Run All (about 1-2 hours). Download eyevision_outputs.zip from Output and
+     unzip it into this folder (adds models/*.pth and reports/).
+     The app automatically uses the model with the best validation score.
+
+
+---------------------------------------------------------------------
+ 6. FULL PIPELINE COMMANDS (for a machine with a GPU)
+---------------------------------------------------------------------
+  # ODIR-5K: index per-eye labels + cache resized crops
+  python scripts/prepare_odir.py --root <path to ODIR-5K folder> --size 224
+
+  # baselines, deep models, evaluation, comparison
+  python baselines.py  --task disease --dataset odir
+  python train.py      --task disease --dataset odir --arch efficientnet_b0 --img-size 224
+  python train.py      --task disease --dataset odir --arch resnet50 --img-size 224
+  python train.py      --task disease --dataset odir --arch efficientnet_b0 --loss focal --tag focal
+  python evaluate.py   --task disease                                  # best model, test patients
+  python evaluate.py   --task disease --checkpoint models/disease_resnet50.pth
+  python evaluate.py   --task disease --compare
+  python scripts/loss_ablation.py --dataset odir --img-size 224
+
+  # RFMiD external check (download RFMiD from IEEE Dataport first)
+  python scripts/prepare_rfmid.py --root <path to RFMiD folder> --size 224
+  python evaluate.py --task disease --external rfmid
+
+  # refractive error, once you have real refraction data (see section 7)
+  python train.py    --task refractive --data-csv data/refraction.csv --arch resnet50
+  python evaluate.py --task refractive
+  python baselines.py --task refractive --data-csv data/refraction.csv
+
+  # pipeline test without any real data (synthetic images)
+  python scripts/make_synthetic_data.py --patients 400
+  python train.py --task refractive --dataset synthetic --img-size 160 --tag demo
+
+  # rebuild the report
+  python scripts/make_report_figures.py
+  python scripts/build_report.py
+
+  Useful flags: --epochs  --batch-size  --img-size  --lr  --loss bce|wbce|focal
+                --no-pretrained  --freeze-early (CPU-friendly)  --no-hflip
+                --multihead (refractive: sphere/cylinder/axis heads)  --max-samples N (debug)
+
+
+---------------------------------------------------------------------
+ 7. REFRACTIVE-ERROR DATA FORMAT
+---------------------------------------------------------------------
+  The shipped refractive model is a DEMO trained on synthetic images and
+  is labelled as such everywhere. To train a real one you need fundus
+  photos with MEASURED refraction, in a CSV like:
+
+  image_path,patient_id,age,sex,sphere,cylinder,axis,spherical_equivalent
+  images/p001_R.jpg,p001,24,F,-2.00,-0.50,180,-2.25
+  images/p001_L.jpg,p001,24,F,-1.75,-0.75,170,
+
+  - image_path may be relative to the CSV file
+  - spherical_equivalent is computed as sphere + cylinder/2 if left empty
+  - an optional "eye" column (L/R) is supported
+  The split is done by patient_id, so both eyes stay in the same split.
+
+
+---------------------------------------------------------------------
+ 8. RESET OR RE-CREATE THE DEMO DATA
+---------------------------------------------------------------------
+  Start empty : stop the app, delete eyevision.db and the files inside
+                app/uploads and app/heatmaps, start the app again.
+  Demo again  : python scripts/seed_demo.py --reset
+
+
+---------------------------------------------------------------------
+ 9. TROUBLESHOOTING
+---------------------------------------------------------------------
+  "python is not recognized"   -> reinstall Python with "Add to PATH" ticked,
+                                  or use  py  instead of  python.
+  pip install torch fails       -> use Python 3.10-3.12 (64-bit) and the exact
+                                  command in step 3.
+  Port 8000 already in use      -> set PORT=8001 (Windows: set PORT=8001) then
+                                  python run_app.py
+  App starts but shows "not trained"
+                                -> run from the EyeVisionAI folder so models/
+                                  is found.
+  Analysis is slow              -> normal on CPU: a few seconds per eye.
+  Image rejected / warnings     -> the app expects colour fundus photographs;
+                                  other photos trigger quality warnings and
+                                  meaningless scores.
+
+=====================================================================
+ Research/educational AI estimate only. This system is not a medical
+ diagnostic tool and does not provide a clinical diagnosis or eyeglass
+ prescription. Please consult a qualified ophthalmologist/optometrist
+ for diagnosis and refraction.
+=====================================================================

@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+data/cache/
+data/ODIR*/
+data/RFMiD*/
+data/*_index.csv
+data/synthetic/images/
+models/pretrained/
+app/uploads/*
+app/heatmaps/*
+!app/uploads/.gitkeep
+!app/heatmaps/.gitkeep
+*.db
+.venv/

@@ -1,0 +1,21 @@
+{
+  "model": "refractive_efficientnet_b0_demo.pth",
+  "split": "held-out TEST split (60 patients, 120 images; split by patient)",
+  "summary": {
+    "n": 120,
+    "mae": 0.7112135087450345,
+    "mse": 0.9234547545153645,
+    "rmse": 0.9609655324283825,
+    "r2": 0.8630590153123497,
+    "bias_mean_error": -0.059286610782146455,
+    "residual_std": 0.9631564978192412,
+    "within_0.50D": 0.49166666666666664,
+    "within_1.00D": 0.7083333333333334,
+    "within_2.00D": 0.9333333333333333,
+    "small_sample": false,
+    "mae_ci95": [
+      0.5941831452275316,
+      0.8372480346386629
+    ]
+  }
+}

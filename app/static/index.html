@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EyeVision AI — research prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/vendor/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div>
+        <div class="brand-name">EyeVision AI</div>
+        <div class="brand-sub">Research prototype</div>
+      </div>
+    </div>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" data-route="dashboard">Dashboard</a>
+      <a href="#/new" data-route="new">New examination</a>
+      <a href="#/patients" data-route="patients">History</a>
+      <a href="#/trends" data-route="trends">Trends</a>
+      <a href="#/models" data-route="models">Model information</a>
+    </nav>
+    <div class="side-foot" id="model-status"></div>
+  </aside>
+  <main id="view" tabindex="-1"></main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
